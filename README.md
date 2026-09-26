@@ -90,3 +90,7 @@ Layout:
 - `internal/provider`: the `Provider` interface, the shared prompt/schema, and the Anthropic and Ollama implementations. Tests use `httptest` fakes, so no network or key is needed.
 - `internal/ui`: rendering and the interactive prompt.
 - `internal/runner`: runs a command line through the shell.
+
+## License
+
+[MIT](LICENSE)
