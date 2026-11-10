@@ -26,7 +26,7 @@ type Anthropic struct {
 
 func (a *Anthropic) Suggest(ctx context.Context, r Request) (Suggestion, error) {
 	if a.APIKey == "" {
-		return Suggestion{}, errors.New("ANTHROPIC_API_KEY is not set")
+		return Suggestion{}, errors.New("ANTHROPIC_API_KEY is not set: run `shell-commander auth anthropic` or export it")
 	}
 	model, url, client := a.Model, a.URL, a.Client
 	if model == "" {

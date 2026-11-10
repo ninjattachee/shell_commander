@@ -37,13 +37,14 @@ go build -o shell-commander .
 
 ```sh
 shell-commander [flags] <what you want to do>
+shell-commander auth [provider]
 ```
 
 Put flags **before** the request. Everything after the first non-flag word is treated as the request, so quoting is not needed.
 
 | Flag | Description |
 | --- | --- |
-| `--provider` | `anthropic` or `ollama`. Env: `SHELL_COMMANDER_PROVIDER`. Default: `ollama`. |
+| `--provider` | `deepseek`, `anthropic` or `ollama`. Env: `SHELL_COMMANDER_PROVIDER`. Default: `deepseek`. |
 | `--model` | Model name. Falls back to the provider's default. |
 | `--explain-only` | Show the command and explanation; never prompt or run. |
 | `--yes` | Run without prompting. Refused if the command is flagged as risky. |
@@ -57,22 +58,42 @@ At the prompt:
 
 If the model flags a command as destructive, irreversible or privileged, a warning is shown and you must type `yes` to run it.
 
-## Providers
+## Credentials
 
-**Ollama** (default) needs a running server at `http://localhost:11434`. The default model is `gemma4:31b-cloud`. Models with a `-cloud` suffix are run by Ollama's hosted service, so your request leaves your machine. Use a local model to keep it private:
+API keys are read from the environment first, then from the OS keyring. Save a key once instead of exporting it in every shell:
 
 ```sh
-shell-commander --model llama3.1 list the 10 largest files here
+shell-commander auth              # DeepSeek (default)
+shell-commander auth anthropic
 ```
 
-**Anthropic** needs an API key:
+You are prompted once with echo disabled, and the key is stored in Secret Service (Linux), Keychain (macOS) or Credential Manager (Windows). Environment variables still take precedence, which is handy for scripts and CI. Piped input also works:
 
 ```sh
-export ANTHROPIC_API_KEY=...
+printf '%s\n' "$DEEPSEEK_API_KEY" | shell-commander auth
+```
+
+## Providers
+
+**DeepSeek** (default) needs an API key, either stored with `shell-commander auth` or exported as `DEEPSEEK_API_KEY`. The default model is `deepseek-flash`:
+
+```sh
+shell-commander find files changed in the last day
+```
+
+**Anthropic** needs an API key, either stored with `shell-commander auth anthropic` or exported as `ANTHROPIC_API_KEY`:
+
+```sh
 shell-commander --provider anthropic find files changed in the last day
 ```
 
 The default Anthropic model is `claude-sonnet-5`.
+
+**Ollama** needs a running server at `http://localhost:11434`. The default model is `gemma4:31b-cloud`. Models with a `-cloud` suffix are run by Ollama's hosted service, so your request leaves your machine. Use a local model to keep it private:
+
+```sh
+shell-commander --provider ollama --model llama3.1 list the 10 largest files here
+```
 
 ## Safety
 
@@ -87,7 +108,8 @@ go vet ./... && go test ./...
 Layout:
 
 - `main.go`: flags and the suggest, render, prompt, run flow.
-- `internal/provider`: the `Provider` interface, the shared prompt/schema, and the Anthropic and Ollama implementations. Tests use `httptest` fakes, so no network or key is needed.
+- `internal/provider`: the `Provider` interface, the shared prompt/schema, and the DeepSeek, Anthropic and Ollama implementations. Tests use `httptest` fakes, so no network or key is needed.
+- `internal/credentials`: OS keyring storage for provider API keys.
 - `internal/ui`: rendering and the interactive prompt.
 - `internal/runner`: runs a command line through the shell.
 
